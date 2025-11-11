@@ -13,9 +13,9 @@ pub struct Args {
 
 fn path_exists(s: &str) -> Result<PathBuf, String> {
     let p = PathBuf::from(s);
-    return if p.exists() && p.is_dir() {
+    if p.exists() && p.is_dir() {
         Ok(p)
     } else {
         Err("Path must exist and be a directory".to_string())
-    };
+    }
 }
