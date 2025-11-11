@@ -12,11 +12,15 @@ mod cli;
 
 fn main() {
     let args = Args::parse();
+
+    // Figure out which files we're working on.
     let globstring = args.directory.join("**").join("*.flac");
     let files: Vec<PathBuf> = glob(globstring.to_str().expect("non-UTF8 path somehow"))
         .expect("failed to glob")
         .filter_map(Result::ok)
         .collect();
+
+    // Break them out into chunks for each thread.
     let mut chunks: Vec<Vec<PathBuf>> = Vec::with_capacity(args.threads);
     for _ in 0..args.threads {
         chunks.push(Vec::new())
@@ -28,6 +32,7 @@ fn main() {
             .push(file.to_path_buf());
     }
 
+    // For each chunk, spawn a thread that invokes ffmpeg on each file.
     let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(chunks.len());
     for chunk in chunks {
         threads.push(thread::spawn(move || {
@@ -59,6 +64,7 @@ fn main() {
         }))
     }
 
+    // Wait for all threads to finish.
     for thread in threads {
         thread.join().expect("couldn't join thread");
     }
