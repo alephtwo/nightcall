@@ -1,7 +1,7 @@
 use anyhow::{Error, anyhow};
 use std::{fs, path::Path, process::Command};
 
-pub fn convert_file(file: &Path) -> Result<(), Error> {
+pub fn convert_file(file: &Path, purge: bool) -> Result<(), Error> {
     let mut output = file.to_path_buf();
     output.set_extension("mp3");
 
@@ -20,9 +20,12 @@ pub fn convert_file(file: &Path) -> Result<(), Error> {
         .output()
         .expect("failed to execute");
     if !out.status.success() {
-        return Err(anyhow!("{:?}", out.stderr));
+        return Err(anyhow!("{:?}", String::from_utf8(out.stderr)));
     }
 
-    fs::remove_file(file).expect("failed to remove file");
+    if purge {
+        fs::remove_file(file).expect("failed to remove file");
+    }
+
     Ok(())
 }

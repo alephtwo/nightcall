@@ -7,4 +7,5 @@ edition = "2024"
 anyhow = "1.0.100"
 clap = { version = "4.5.51", features = ["cargo", "derive"] }
 glob = "0.3.3"
+indicatif = "0.18.3"
 num_cpus = "1.17.0"
