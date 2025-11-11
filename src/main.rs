@@ -1,4 +1,5 @@
 use clap::Parser;
+use cli::Args;
 use glob::glob;
 use std::{
     fs,
@@ -7,15 +8,7 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Args {
-    #[arg(short, long, value_parser = path_exists)]
-    directory: PathBuf,
-
-    #[arg(short, long, default_value_t = num_cpus::get_physical().try_into().expect("failed to determine how many cpus"))]
-    threads: usize,
-}
+mod cli;
 
 fn main() {
     let args = Args::parse();
@@ -69,13 +62,4 @@ fn main() {
     for thread in threads {
         thread.join().expect("couldn't join thread");
     }
-}
-
-fn path_exists(s: &str) -> Result<PathBuf, String> {
-    let p = PathBuf::from(s);
-    return if p.exists() && p.is_dir() {
-        Ok(p)
-    } else {
-        Err("Path must exist and be a directory".to_string())
-    };
 }
