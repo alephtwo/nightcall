@@ -1,0 +1,82 @@
+---
+name: "Code Checks"
+"on":
+  push:
+    branches:
+      - "*"
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+jobs:
+  test:
+    name: "Test"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v6"
+      - uses: "actions/cache@v5"
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: "${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}"
+      - uses: "cargo-bins/cargo-binstall@main"
+      - name: "Install Nextest"
+        run: |
+          cargo binstall cargo-nextest --secure
+      - name: "Run Nextest"
+        run: |
+          cargo nextest run --no-tests pass
+  clippy:
+    name: "Clippy"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v6"
+      - uses: "actions/cache@v5"
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: "${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}"
+      - name: "Run Clippy"
+        run: |
+          cargo clippy --all-targets --all-features -- -D warnings
+  fmt:
+    name: "Check Formatting"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v6"
+      - name: "Check Formatting"
+        run: |
+          cargo fmt --all --check
+  yamllint:
+    name: "Run yamllint"
+    runs-on: "ubuntu-latest"
+    container:
+      image: "alpine:latest"
+    steps:
+      - uses: "actions/checkout@v6"
+      - name: "Install yamllint"
+        run: |
+          apk add yamllint
+      - name: "Run yamllint"
+        run: |
+          yamllint -s .
+  markdownlint:
+    name: "Run markdownlint"
+    runs-on: "ubuntu-latest"
+    container:
+      image: "node:latest"
+    steps:
+      - uses: "actions/checkout@v6"
+      - name: "Install markdownlint-cli"
+        run: |
+          npm install -g markdownlint-cli
+      - name: "Run markdownlint"
+        run: |
+          markdownlint .
