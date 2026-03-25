@@ -1,4 +1,4 @@
-use crate::ffmpeg::{convert_file, has_cover_art};
+use crate::ffmpeg::{CoverStatus, convert_file};
 use anyhow::{Error, anyhow};
 use clap::Parser;
 use cli::Args;
@@ -24,7 +24,7 @@ fn main() -> Result<(), Error> {
     let chunks = chunk(files, args.threads);
 
     // For each chunk, spawn a thread that invokes ffmpeg on each file.
-    let mut threads: Vec<JoinHandle<Result<(), Error>>> = Vec::with_capacity(chunks.len());
+    let mut threads: Vec<JoinHandle<Result<Vec<String>, Error>>> = Vec::with_capacity(chunks.len());
     let multi_progress = MultiProgress::new();
     let progress_style =
         ProgressStyle::with_template("[{eta:4}] {bar:.blue/gray} {pos}/{len} {msg}")?;
@@ -34,28 +34,41 @@ fn main() -> Result<(), Error> {
         progress.set_style(progress_style.clone());
 
         threads.push(thread::spawn(move || {
+            let mut messages: Vec<String> = Vec::new();
             for file in &chunk {
                 let path = file
                     .to_str()
                     .ok_or(anyhow!("path is not a string"))?
                     .to_string();
                 progress.set_message(path.to_string());
-                if !has_cover_art(file)? {
-                    progress.println(format!("Warning: no cover art found in {path}"));
+                match convert_file(file, args.purge)? {
+                    CoverStatus::Embedded => {}
+                    CoverStatus::FoundAndEmbedded(ref img) => messages.push(format!(
+                        "info: embedded {} as cover art for {path}",
+                        img.display()
+                    )),
+                    CoverStatus::NotFound => {
+                        messages.push(format!("warning: no cover art found for {path}"))
+                    }
                 }
-                convert_file(file, args.purge)?;
                 progress.inc(1);
             }
             progress.finish();
-            Ok(())
+            Ok(messages)
         }))
     }
 
-    // Wait for all threads to finish.
+    // Wait for all threads to finish and collect messages.
+    let mut all_messages: Vec<String> = Vec::new();
     for thread in threads {
-        thread.join().expect("couldn't join thread")?;
+        all_messages.extend(thread.join().expect("couldn't join thread")?);
     }
     multi_progress.clear()?;
+
+    for message in all_messages {
+        println!("{message}");
+    }
+
     Ok(())
 }
 
