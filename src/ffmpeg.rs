@@ -81,13 +81,13 @@ pub fn convert_file(file: &Path, purge: bool) -> Result<CoverStatus, Error> {
     // Output file
     cmd.arg(&output);
 
-    let out = cmd.output().expect("failed to execute");
+    let out = cmd.output()?;
     if !out.status.success() {
-        return Err(anyhow!("{:?}", String::from_utf8(out.stderr)));
+        return Err(anyhow!("{}", String::from_utf8_lossy(&out.stderr)));
     }
 
     if purge {
-        fs::remove_file(file).expect("failed to remove file");
+        fs::remove_file(file)?;
     }
 
     Ok(status)
@@ -105,10 +105,9 @@ pub fn has_cover_art(file: &Path) -> Result<bool, Error> {
         .arg("-of")
         .arg("csv=p=0")
         .arg(file)
-        .output()
-        .expect("failed to execute ffprobe");
+        .output()?;
     if !out.status.success() {
-        return Err(anyhow!("{:?}", String::from_utf8(out.stderr)));
+        return Err(anyhow!("{}", String::from_utf8_lossy(&out.stderr)));
     }
     Ok(!out.stdout.trim_ascii().is_empty())
 }

@@ -40,7 +40,7 @@ fn main() -> Result<(), Error> {
                     .to_str()
                     .ok_or(anyhow!("path is not a string"))?
                     .to_string();
-                progress.set_message(path.to_string());
+                progress.set_message(path.clone());
                 match convert_file(file, args.purge)? {
                     CoverStatus::Embedded => {}
                     CoverStatus::FoundAndEmbedded(ref img) => messages.push(format!(
