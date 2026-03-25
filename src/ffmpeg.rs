@@ -65,8 +65,8 @@ pub fn convert_file(file: &Path, purge: bool) -> Result<CoverStatus, Error> {
         cmd.arg("-i").arg(img);
     }
 
-    // Set output bitrate to 320 kbps
-    cmd.arg("-ab").arg("320k");
+    // Use VBR V0 (highest quality variable bitrate)
+    cmd.arg("-q:a").arg("0");
     // Normalize to 44.1 kHz — Mazda infotainment rejects or mishandles
     // higher sample rates common in FLAC (e.g. 96 kHz)
     cmd.arg("-ar").arg("44100");
