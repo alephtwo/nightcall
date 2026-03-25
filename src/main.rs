@@ -17,6 +17,9 @@ mod util;
 fn main() -> Result<(), Error> {
     let args = Args::parse();
 
+    // Verify ffmpeg is available before doing any work.
+    ffmpeg::check_available()?;
+
     // Figure out which files we're working on.
     let files = list_files(&args.directory)?;
 

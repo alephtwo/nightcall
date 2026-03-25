@@ -3,6 +3,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
+    thread,
 };
 
 pub enum CoverStatus {
@@ -12,6 +13,27 @@ pub enum CoverStatus {
     FoundAndEmbedded(PathBuf),
     /// No embedded art and no cover image file could be found.
     NotFound,
+}
+
+pub fn check_available() -> Result<(), Error> {
+    let handles: Vec<_> = ["ffmpeg", "ffprobe"]
+        .iter()
+        .map(|&bin| {
+            thread::spawn(move || {
+                Command::new(bin).arg("-version").output().map_err(|_| {
+                    anyhow!(
+                        "{bin} is not available; please install it and ensure it is on the PATH"
+                    )
+                })
+            })
+        })
+        .collect();
+
+    for handle in handles {
+        handle.join().expect("thread panicked")?;
+    }
+
+    Ok(())
 }
 
 pub fn convert_file(file: &Path, purge: bool) -> Result<CoverStatus, Error> {
