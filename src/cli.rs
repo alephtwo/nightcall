@@ -7,7 +7,12 @@ pub struct Args {
     #[arg(short, long, value_parser = path_exists)]
     pub directory: PathBuf,
 
-    #[arg(short, long, default_value_t = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1), value_parser = parse_threads)]
+    #[arg(
+        short,
+        long,
+        default_value_t = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1),
+        value_parser = parse_threads
+    )]
     pub threads: usize,
 
     #[arg(short, long, help = "Remove original files after conversion")]
