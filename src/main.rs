@@ -1,4 +1,4 @@
-use crate::ffmpeg::convert_file;
+use crate::ffmpeg::{convert_file, has_cover_art};
 use anyhow::{Error, anyhow};
 use clap::Parser;
 use cli::Args;
@@ -40,6 +40,9 @@ fn main() -> Result<(), Error> {
                     .ok_or(anyhow!("path is not a string"))?
                     .to_string();
                 progress.set_message(path.to_string());
+                if !has_cover_art(file)? {
+                    progress.println(format!("Warning: no cover art found in {path}"));
+                }
                 convert_file(file, args.purge)?;
                 progress.inc(1);
             }
