@@ -77,8 +77,14 @@ pub fn convert_file(file: &Path, purge: bool) -> Result<CoverStatus, Error> {
     // Clear the TLEN (duration) tag so players derive duration from the
     // Xing/Info header instead, which reflects the actual encoded content
     cmd.arg("-metadata").arg("TLEN=");
+    // Clear the ISRC (TSRC) tag — Gracenote uses it as a lookup key to
+    // identify tracks and override embedded metadata in car head units
+    cmd.arg("-metadata").arg("TSRC=");
     // Write ID3v2.3 tags (broadest player compatibility)
     cmd.arg("-id3v2_version").arg("3");
+    // Also write ID3v1 tags alongside ID3v2.3; some car head units prefer
+    // ID3v1 and will fall back to Gracenote DB lookups if it is absent
+    cmd.arg("-write_id3v1").arg("1");
 
     if external_cover.is_some() {
         // Map audio from first input and image from second input
