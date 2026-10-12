@@ -13,6 +13,10 @@ use std::{
 mod cli;
 mod ffmpeg;
 
+const AUDIO_EXTENSIONS: &[&str] = &[
+    "flac", "mp3", "wav", "aiff", "aif", "m4a", "aac", "ogg", "opus", "wma", "ape", "wv",
+];
+
 fn main() -> Result<(), Error> {
     let args = Args::parse();
 
@@ -108,9 +112,26 @@ fn worker(
 }
 
 fn list_files(directory: &Path) -> Result<Vec<PathBuf>, Error> {
-    let pattern = directory.join("**").join("*.flac");
+    let pattern = directory.join("**").join("*");
     let globstring = pattern
         .to_str()
         .ok_or(anyhow!("Non-UTF8 Paths are not allowed"))?;
-    Ok(glob(globstring)?.filter_map(Result::ok).collect())
+    Ok(glob(globstring)?
+        .filter_map(Result::ok)
+        .filter(|p| is_audio_file(p))
+        .collect())
+}
+
+fn is_audio_file(path: &Path) -> bool {
+    let is_hidden_or_temp = path.file_name().is_some_and(|n| {
+        let n = n.to_string_lossy();
+        // macOS AppleDouble files and our own in-progress outputs
+        n.starts_with("._") || n.contains(".nightcall-tmp.")
+    });
+    !is_hidden_or_temp
+        && path.is_file()
+        && path
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| AUDIO_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
 }
