@@ -46,7 +46,6 @@ jobs:
         run: |
           cargo build --release --target ${{ matrix.target }}
       - name: "Classify binary"
-        if:
         run: >
           mv
           "target/${{ matrix.target }}/release/nightcall${{ matrix.ext }}"
